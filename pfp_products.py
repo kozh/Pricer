@@ -7,6 +7,7 @@ import matplotlib.mlab as mlab
 import random
 import time
 import datetime
+import os
 import matplotlib.pyplot as plt
 
 from pfp_stat import rfr
@@ -78,17 +79,6 @@ class Structure:
 		return discount
 
 	def make_pdf(self, a1):
-
-		fig = figure(figsize=(16, 10))
-		plt.yticks([])
-		plt.xticks(fontname="Arial", fontsize=24)
-
-		chart_name = self.name + ' NPV distribution'
-		title(self.name + ' NPV distribution', fontname="Arial", fontsize=24)
-		bins = np.linspace(0,1.5,75)
-		plt.hist(a1.sum(axis = 0), bins, alpha=1, color = 'salmon')
-		plt.savefig('results/' + self.name + ' payoff.png')
-		plt.close(fig)
 
 		pdf = FPDF()
 		pdf.add_page()
@@ -180,8 +170,19 @@ class Structure:
 		pdf.cell(90, 10, " ", 0, 2, 'C')
 		pdf.cell(-30)
 
+		fig = figure(figsize=(16, 10))
+		plt.yticks([])
+		plt.xticks(fontname="Arial", fontsize=24)
+
+		chart_name = self.name + ' NPV distribution'
+		title(self.name + ' NPV distribution', fontname="Arial", fontsize=24)
+		bins = np.linspace(0,1.5,75)
+		plt.hist(a1.sum(axis = 0), bins, alpha=1, color = 'salmon')
+		plt.savefig('results/' + self.name + ' payoff.png')
+		plt.close(fig)
 		pdf.image('results/' + self.name + ' payoff.png', x = 2, y = 170, w = 200, h = 0, type = '', link = '')
 		pdf.output('results/' + self.name + ' description sheet', 'F')
+		os.remove('results/' + self.name + ' payoff.png')
 
 
 	def payoff(self, underlyings, returns, to_pdf = False):
