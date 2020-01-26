@@ -262,17 +262,23 @@ class Structure:
 		wrst = rtrns.min(axis = 2)
 		worst_last = wrst[-1,:]
 
+		abs_diff = worst_last - self.redemption_amount
+		abs_diff_upside = np.where(abs_diff > 0, abs_diff, 0)
+		abs_diff_downside = np.where(abs_diff < 0, abs_diff, 0)
+
 		if self.redemption_guarantee_rule == 1:			
 			guarantee_payoff[-1,:] = ((worst_last < self.redemption_put_strike)*worst_last +
 				(worst_last >= self.redemption_put_strike)*(worst_last < self.redemption_amount) + 
 				(worst_last >= self.redemption_amount)*(self.redemption_amount + 
-					np.abs(worst_last - self.redemption_amount)*self.redemption_upside_participation))
+					abs_diff_upside*self.redemption_upside_participation) +
+				abs_diff_downside*self.redemption_downside_participation)
 
 		if self.redemption_guarantee_rule == 2:
 			guarantee_payoff[-1,:] = ((worst_last < self.redemption_put_strike)*worst_last/self.redemption_put_strike + 
 				(worst_last >= self.redemption_put_strike)*(worst_last < self.redemption_amount) + 
 				(worst_last >= self.redemption_amount)*(self.redemption_amount + 
-					np.abs(worst_last - self.redemption_amount)*self.redemption_upside_participation))
+					abs_diff_upside*self.redemption_upside_participation) + 
+				abs_diff_downside*self.redemption_downside_participation)
 
 		guarantee_payoff = guarantee_payoff*active_flag
 
@@ -286,6 +292,6 @@ class Structure:
 		if to_pdf == True:
 			self.make_pdf(total_discounted_payoff)
 
-		return total_discounted_payoff
+		return total_discounted_payoff.sum(axis = 0)
 
 

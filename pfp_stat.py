@@ -32,8 +32,23 @@ def ba_scenarios(BAs, simulation_years, n_scenarios, print_statistics = False, p
     std = Returns[BAs].std()
     var = Returns[BAs].var()
     cov = Returns[BAs].cov()
+
     #corr = np.power(Returns[BAs].corr(),1)
     corr = (Returns[BAs].dropna()).corr()
+
+    corr2 = corr
+    for i in range(len(BAs)-1):
+        for j in range(i+1,len(BAs)-1):
+            print(i)
+            print(j)
+            print((((Returns[[BAs[i+1],BAs[j+1]]]).dropna()).corr()).iloc[0,1])
+            corr2.iloc[i+1,j+1] = (((Returns[[BAs[i+1],BAs[j+1]]]).dropna()).corr()).iloc[0,1]
+
+    print(corr2)
+
+
+
+
     drift = mu - (0.5*var)
 
     r1 = np.random.multivariate_normal(np.zeros_like(mu), corr, n_scenarios*n_timepoints)
