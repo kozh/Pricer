@@ -105,4 +105,64 @@ def check_stat(BAs):
             #row.BAs.split(', ')
             return True
 
+def virr(cfs, precision = 0.0005, rmin = -1, rmax = 1):
+    ''' 
+    Vectorized IRR calculator. First calculate a 3D array of the discounted
+    cash flows along cash flow series, time period, and discount rate. Sum over time to 
+    collapse to a 2D array which gives the NPV along a range of discount rates 
+    for each cash flow series. Next, find crossover where NPV is zero--corresponds
+    to the lowest real IRR value. For performance, negative IRRs are not calculated
+    -- returns "-1", and values are only calculated to an acceptable precision.
 
+    IN:
+        cfs - numpy 2d array - rows are cash flow series, cols are time periods
+        precision - level of accuracy for the inner IRR band eg 0.005%
+        rmin - lower bound of the inner IRR band eg 0%
+        rmax1 - upper bound of the inner IRR band eg 30%
+        rmax2 - upper bound of the outer IRR band. eg 50% Values in the outer 
+                band are calculated to 1% precision, IRRs outside the upper band 
+                return the rmax2 value
+    OUT:
+        r - numpy column array of IRRs for cash flow series
+    '''
+
+    cfs = np.transpose(cfs)
+
+    if cfs.ndim == 1: 
+        cfs = cfs.reshape(1,len(cfs))
+
+    # Range of time periods
+    years = np.arange(0,cfs.shape[1])
+
+    # Range of the discount rates
+
+    rates = np.linspace(rmin,rmax,(rmax - rmin)/precision)
+    rates[rates==0] = 0.0001
+
+    # Discount rate multiplier rows are years, cols are rates
+    drm = (1+rates)**-years[:,np.newaxis]
+
+    # Calculate discounted cfs   
+    discounted_cfs = cfs[:,:,np.newaxis] * drm
+
+    # Calculate NPV array by summing over discounted cashflows
+    npv = discounted_cfs.sum(axis = 1)
+
+    ## Find where the NPV changes sign, implies an IRR solution
+    signs = npv < 0
+
+    # Find the pairwise differences in boolean values when sign crosses over, the
+    # pairwise diff will be True
+    crossovers = np.diff(signs,1,1)
+
+    # Extract the irr from the first crossover for each row
+    irr = np.min(np.ma.masked_equal(rates[1:]* crossovers,0),1)
+
+    # Error handling, negative irrs are returned as "-1", IRRs greater than rmax2 are
+    # returned as rmax2
+    
+    negative_irrs = cfs.sum(1) < 0
+    r = np.where(negative_irrs,-1,irr)
+    r = np.where(irr.mask * (negative_irrs == False), 0.5, r)
+
+    return r

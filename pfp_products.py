@@ -11,6 +11,8 @@ import os
 import matplotlib.pyplot as plt
 
 from pfp_stat import rfr
+from pfp_stat import virr
+
 from timeit import default_timer as timer
 
 from datetime import datetime
@@ -195,18 +197,16 @@ class Structure:
 			positions.append(self.underlyings.index(a))
 
 		n_scenarios = self.returns.shape[1]
-
 		rtrns = (self.returns[:,:,positions])[self.time_steps,:,:]
+		active_flag = np.ones((rtrns.shape[0],rtrns.shape[1]))		
+		# active_flag.shape - основной размер массива для дальнейших операций
 
 		############################################################################################
 		# автоколл
 		############################################################################################
 		#
-		active_flag = np.ones((rtrns.shape[0],rtrns.shape[1]))
-		autocalled = np.zeros((rtrns.shape[0],rtrns.shape[1]))
-		
-		# active_flag.shape - основной размер массива для дальнейших операций
 
+		autocalled = np.zeros((rtrns.shape[0],rtrns.shape[1]))
 		if self.autocall_flag == 1:
 			c1 = self.autocall_barrier + self.autocall_barrier_increase_rate*np.array(range(0,self.n_points))
 			call_trigger = np.reshape(np.repeat(c1, n_scenarios*len(self.BAs)), (self.n_points, n_scenarios, len(self.BAs)))  
@@ -289,9 +289,16 @@ class Structure:
 		total_payoff = coupons + autocalled + guarantee_payoff	
 		total_discounted_payoff = total_payoff * self.discounter(n_scenarios)
 
+		# считаем irr 
+		#total_cf = np.ones((total_payoff.shape[0]+1,total_payoff.shape[1]))*(-1)
+		#total_cf[1:,:] = total_payoff
+		#irr = virr(total_cf)
+
 		if to_pdf == True:
 			self.make_pdf(total_discounted_payoff)
 
-		return total_discounted_payoff.sum(axis = 0)
+		#return total_discounted_payoff.sum(axis = 0)
+		return  total_payoff
+		#return total_payoff.sum(axis = 0)
 
 
