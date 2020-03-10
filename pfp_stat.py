@@ -24,7 +24,6 @@ def get_hist(BAs, points_in_year, stat_depth):
 def calc_correlations(BAs, points_in_year, stat_depth):
 
     BAs = [(x.lower()) for x in BAs]
-
     Hist = pd.read_excel('inputs/quotes daily.xlsx', 'quotes', decimal = '.')
     Hist.columns = Hist.columns.str.lower()
     Hist = Hist[[(x.lower()) for x in BAs]+['date']]
